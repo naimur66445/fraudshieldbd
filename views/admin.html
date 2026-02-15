@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ FraudShieldBD — Shopify Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f6f6f7;
+            color: #202223;
+            line-height: 1.5;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 700; }
+        .app-header .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e1e3e5;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e1e3e5;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-body { padding: 20px; }
+
+        /* Settings form */
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #6d7175;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #c9cccf;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+        }
+        .form-group .help { font-size: 12px; color: #6d7175; margin-top: 4px; }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f2f4;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-row .info h4 { font-size: 14px; font-weight: 600; }
+        .toggle-row .info p { font-size: 12px; color: #6d7175; }
+
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .slider {
+            position: absolute;
+            inset: 0;
+            background: #c9cccf;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle .slider::before {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        .toggle input:checked + .slider { background: #2563eb; }
+        .toggle input:checked + .slider::before { transform: translateX(20px); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-outline {
+            background: white;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+        }
+        .btn-outline:hover { background: #eff6ff; }
+
+        /* Manual Check */
+        .check-input {
+            display: flex;
+            gap: 8px;
+        }
+        .check-input input { flex: 1; }
+
+        /* Result panel */
+        .result-panel { margin-top: 16px; display: none; }
+        .result-panel.show { display: block; }
+
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .risk-safe { background: #dcfce7; color: #16a34a; }
+        .risk-medium { background: #fef3c7; color: #d97706; }
+        .risk-high { background: #fecaca; color: #dc2626; }
+        .risk-unknown { background: #f3f4f6; color: #6b7280; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+        .stat-card .label { font-size: 11px; color: #6b7280; }
+        .stat-card .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+
+        .courier-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+        .courier-table th {
+            background: #f9fafb;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .courier-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .report-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* Loading */
+        .loading { text-align: center; padding: 20px; color: #6d7175; }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e1e3e5;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s;
+        }
+        .notification.show { transform: translateX(0); }
+        .notification.success { background: #16a34a; }
+        .notification.error { background: #dc2626; }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .status-dot.green { background: #16a34a; }
+        .status-dot.yellow { background: #d97706; }
+        .status-dot.red { background: #dc2626; }
+        .status-dot.gray { background: #6b7280; }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .check-input { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <span style="font-size: 28px;">🛡️</span>
+        <h1>FraudShieldBD</h1>
+        <span class="badge">Shopify App v1.0</span>
+    </div>
+
+    <div class="container">
+
+        <!-- Connection Status -->
+        <div class="card">
+            <div class="card-header">📡 কানেকশন স্ট্যাটাস</div>
+            <div class="card-body">
+                <div class="status-bar" id="statusBar">
+                    <div class="status-item">
+                        <span class="status-dot gray" id="apiDot"></span>
+                        <span id="apiStatus">চেক হচ্ছে...</span>
+                    </div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <button class="btn btn-outline" onclick="testConnection()">🔗 টেস্ট কানেকশন</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="card">
+            <div class="card-header">⚙️ সেটিংস</div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>FraudShieldBD API Key</label>
+                    <input type="password" id="apiKey" placeholder="cf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+                    <p class="help">API Key পেতে → <a href="https://fraudshield.bd/dashboard" target="_blank">fraudshield.bd/dashboard</a> → API Keys → Generate</p>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="info">
+                        <h4>🔄 অটো চেক</h4>
+                        <p>নতুন অর্ডার আসলে অটোমেটিক ফোন নম্বর চেক</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="autoCheck" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="info">
+                        <h4>💰 শুধু COD</h4>
+                        <p>শুধু Cash on Delivery অর্ডার চেক করবে</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="codOnly" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="info">
+                        <h4>🏷️ অটো ট্যাগ</h4>
+                        <p>অর্ডারে রিস্ক লেভেল ট্যাগ অটো যোগ করবে</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="autoTag" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="info">
+                        <h4>📝 অর্ডার নোট</h4>
+                        <p>চেক রেজাল্ট অর্ডার নোটে লিখবে</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="addNotes" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <div class="form-group" style="flex:1;">
+                        <label>⛔ হাই রিস্ক থ্রেশহোল্ড (%)</label>
+                        <input type="number" id="thresholdHigh" value="50" min="0" max="100" />
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>⚠️ মিডিয়াম রিস্ক থ্রেশহোল্ড (%)</label>
+                        <input type="number" id="thresholdMedium" value="70" min="0" max="100" />
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings()">💾 সেভ করুন</button>
+            </div>
+        </div>
+
+        <!-- Manual Check -->
+        <div class="card">
+            <div class="card-header">🔍 ম্যানুয়াল ফোন চেক</div>
+            <div class="card-body">
+                <div class="check-input">
+                    <input type="text" id="phoneInput" placeholder="01XXXXXXXXX" />
+                    <button class="btn btn-primary" onclick="checkPhone()">🔍 চেক করুন</button>
+                </div>
+
+                <div class="result-panel" id="resultPanel">
+                    <!-- Results will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Level Guide -->
+        <div class="card">
+            <div class="card-header">📊 রিস্ক লেভেল গাইড</div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-color: #16a34a;">
+                        <div class="label">✅ Safe</div>
+                        <div class="value" style="color: #16a34a; font-size: 16px;">≥ 70%</div>
+                        <div class="label">নিরাপদ</div>
+                    </div>
+                    <div class="stat-card" style="border-color: #d97706;">
+                        <div class="label">⚠️ Medium</div>
+                        <div class="value" style="color: #d97706; font-size: 16px;">50-70%</div>
+                        <div class="label">সতর্ক</div>
+                    </div>
+                    <div class="stat-card" style="border-color: #dc2626;">
+                        <div class="label">⛔ High</div>
+                        <div class="value" style="color: #dc2626; font-size: 16px;">< 50%</div>
+                        <div class="label">বিপদজনক</div>
+                    </div>
+                    <div class="stat-card" style="border-color: #6b7280;">
+                        <div class="label">❓ Unknown</div>
+                        <div class="value" style="color: #6b7280; font-size: 16px;">N/A</div>
+                        <div class="label">অজানা</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="card">
+            <div class="card-header">💡 কীভাবে কাজ করে</div>
+            <div class="card-body">
+                <div style="display: grid; gap: 12px; font-size: 14px;">
+                    <div>① কাস্টমার COD অর্ডার দেয় → প্লাগইন অটোমেটিক ফোন নম্বর ধরে</div>
+                    <div>② FraudShieldBD API-তে ফোন নম্বর পাঠায় → সব কুরিয়ারের ডাটা চেক হয়</div>
+                    <div>③ রেজাল্ট আসে → অর্ডারে রিস্ক ট্যাগ যোগ হয় (Safe / Medium / High)</div>
+                    <div>④ অর্ডার নোটে বিস্তারিত রিপোর্ট + কুরিয়ার ব্রেকডাউন লেখা হয়</div>
+                    <div>⑤ আপনি অর্ডার লিস্টে ট্যাগ দেখে ডিসিশন নিন — ডেলিভারি দেবেন কি না!</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // ── Test Connection ───────────────────────
+        async function testConnection() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                showNotification('API Key দিন!', 'error');
+                return;
+            }
+
+            const dot = document.getElementById('apiDot');
+            const status = document.getElementById('apiStatus');
+            dot.className = 'status-dot yellow';
+            status.textContent = 'চেক হচ্ছে...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/test-connection`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey }),
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    dot.className = 'status-dot green';
+                    status.textContent = '✅ কানেক্টেড!';
+                    showNotification('কানেকশন সফল!', 'success');
+                } else {
+                    dot.className = 'status-dot red';
+                    status.textContent = '❌ ' + data.message;
+                    showNotification(data.message, 'error');
+                }
+            } catch (err) {
+                dot.className = 'status-dot red';
+                status.textContent = '❌ কানেকশন ব্যর্থ';
+                showNotification('কানেকশন ব্যর্থ: ' + err.message, 'error');
+            }
+        }
+
+        // ── Save Settings ─────────────────────────
+        function saveSettings() {
+            // In a real app, this would save to server/database
+            const settings = {
+                apiKey: document.getElementById('apiKey').value,
+                autoCheck: document.getElementById('autoCheck').checked,
+                codOnly: document.getElementById('codOnly').checked,
+                autoTag: document.getElementById('autoTag').checked,
+                addNotes: document.getElementById('addNotes').checked,
+                thresholdHigh: document.getElementById('thresholdHigh').value,
+                thresholdMedium: document.getElementById('thresholdMedium').value,
+            };
+            localStorage.setItem('fsbd_settings', JSON.stringify(settings));
+            showNotification('সেটিংস সেভ হয়েছে!', 'success');
+        }
+
+        // ── Load saved settings ───────────────────
+        function loadSettings() {
+            const saved = localStorage.getItem('fsbd_settings');
+            if (saved) {
+                const s = JSON.parse(saved);
+                if (s.apiKey) document.getElementById('apiKey').value = s.apiKey;
+                if (s.autoCheck !== undefined) document.getElementById('autoCheck').checked = s.autoCheck;
+                if (s.codOnly !== undefined) document.getElementById('codOnly').checked = s.codOnly;
+                if (s.autoTag !== undefined) document.getElementById('autoTag').checked = s.autoTag;
+                if (s.addNotes !== undefined) document.getElementById('addNotes').checked = s.addNotes;
+                if (s.thresholdHigh) document.getElementById('thresholdHigh').value = s.thresholdHigh;
+                if (s.thresholdMedium) document.getElementById('thresholdMedium').value = s.thresholdMedium;
+            }
+        }
+
+        // ── Check Phone ──────────────────────────
+        async function checkPhone() {
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!phone) {
+                showNotification('ফোন নম্বর দিন!', 'error');
+                return;
+            }
+
+            const panel = document.getElementById('resultPanel');
+            panel.className = 'result-panel show';
+            panel.innerHTML = '<div class="loading"><span class="spinner"></span> চেক হচ্ছে...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/check-phone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone }),
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    panel.innerHTML = `<div class="report-warning">${data.message || 'চেক ব্যর্থ'}</div>`;
+                    return;
+                }
+
+                renderResult(panel, data);
+            } catch (err) {
+                panel.innerHTML = `<div class="report-warning">এরর: ${err.message}</div>`;
+            }
+        }
+
+        // ── Render Result ─────────────────────────
+        function renderResult(container, data) {
+            const s = data.summary;
+            const riskClass = {
+                safe: 'risk-safe',
+                medium: 'risk-medium',
+                high: 'risk-high',
+                unknown: 'risk-unknown',
+            }[data.riskLevel] || 'risk-unknown';
+
+            let html = `
+                <div style="margin-top: 16px;">
+                    <span class="risk-badge ${riskClass}">${data.riskIcon} ${data.riskLabel}</span>
+                    ${data.fromCache ? '<span style="margin-left:8px; font-size:12px; color:#6b7280;">📋 ক্যাশড</span>' : ''}
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">📦 Total</div>
+                        <div class="value">${s.totalParcel}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">✅ Success</div>
+                        <div class="value" style="color: #16a34a;">${s.successParcel}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">❌ Cancel</div>
+                        <div class="value" style="color: #dc2626;">${s.cancelledParcel}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">📊 Ratio</div>
+                        <div class="value">${s.successRatio}%</div>
+                    </div>
+                </div>
+            `;
+
+            // Report warning
+            if (data.reportCount > 0) {
+                html += `<div class="report-warning">🚨 ${data.reportCount} টি ফ্রড রিপোর্ট আছে!</div>`;
+            }
+
+            // Courier breakdown
+            const courierKeys = Object.keys(data.couriers || {});
+            if (courierKeys.length > 0) {
+                html += `
+                    <table class="courier-table">
+                        <thead>
+                            <tr>
+                                <th>কুরিয়ার</th>
+                                <th>Total</th>
+                                <th>✅</th>
+                                <th>❌</th>
+                                <th>Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                for (const key of courierKeys) {
+                    const c = data.couriers[key];
+                    html += `
+                        <tr>
+                            <td><strong>${c.name}</strong></td>
+                            <td>${c.totalParcel}</td>
+                            <td style="color:#16a34a;">${c.successParcel}</td>
+                            <td style="color:#dc2626;">${c.cancelledParcel}</td>
+                            <td><strong>${c.successRatio}%</strong></td>
+                        </tr>
+                    `;
+                }
+                html += '</tbody></table>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ── Notification ──────────────────────────
+        function showNotification(msg, type = 'success') {
+            const el = document.getElementById('notification');
+            el.textContent = msg;
+            el.className = `notification ${type} show`;
+            setTimeout(() => { el.className = 'notification'; }, 3000);
+        }
+
+        // Init
+        loadSettings();
+    </script>
+</body>
+</html>
